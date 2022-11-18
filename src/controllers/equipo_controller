@@ -1,0 +1,91 @@
+const { db } = require('../firebase');
+const { validationResult } = require("express-validator");
+
+const getAllEquipos = async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        const query = db.collection("equipos");
+        const querySnapshot = await query.get();
+        const docs = querySnapshot.docs;
+        const response = docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
+        return res.status(200).json(response);
+    } catch (error) {
+        return res.status(500).json();
+    }
+};
+
+const getSingleEquipo = async (req, res) => {
+    try {
+        const id = req.params.idEquipo;
+        const Equipo = db.collection("equipos").doc(id);
+        const data = await Equipo.get();
+        if (!data.exists) {
+            res.status(404).send('El equipo no fue encontrado');
+        } else {
+            const response = data.data();
+            return res.status(200).json(response);
+        }
+    } catch (error) {
+        return res.status(500).json();
+    }
+};
+
+const addEquipo = async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        const data = req.body;
+        await db.collection("equipos").doc().set(data);
+        res.send("El equipo fue registrado correctamente");
+        return res.status(204);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).send(error);
+    }
+};
+
+const updateEquipo = async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            console.log(errors.array())
+            return res.status(400).json({ errors: errors.array() });
+        }
+        const id = req.params.idEquipo;
+        const data = req.body;
+        console.log(data);
+        const Equipo = db.collection("equipos").doc(id);
+        await Equipo.update(data);
+        res.send("El equipo fue actualizado correctamente");
+        return res.status(200).json();
+    } catch (error) {
+        return res.status(500).json();
+    }
+};
+
+const deleteEquipo = async (req, res) => {
+    try {
+        const id = req.params.idEquipo;
+        const doc = db.collection("equipos").doc(id);
+        await doc.delete();
+        return res.status(200).send("El equipo fue borrado con exito");
+    } catch (error) {
+        return res.status(500).json();
+    }
+};
+
+module.exports = {
+    getAllEquipos,
+    getSingleEquipo,
+    addEquipo,
+    updateEquipo,
+    deleteEquipo
+}
